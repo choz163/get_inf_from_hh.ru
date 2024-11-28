@@ -1,36 +1,41 @@
 import requests
 from abc import ABC, abstractmethod
-from typing import List, Dict
 
-class API(ABC):
-    """Абстрактный класс для взаимодействия с API."""
+
+class APIClient(ABC):
+    @abstractmethod
+    def _connect_to_api(self):
+        pass
 
     @abstractmethod
-    def connect(self) -> None:
-        """Подключение к API."""
-
-    @abstractmethod
-    def get_vacancies(self, keyword: str) -> List[Dict]:
-        """Получение вакансии через API."""
+    def get_vacancies(self, keyword: str):
+        pass
 
 
-class HeadHunterAPI(API):
-    """Класс для взаимодействия с API hh.ru."""
+class HH(APIClient):
+    """Класс для работы с API HeadHunter."""
 
     def __init__(self):
-        self._base_url = "https://api.hh.ru/vacancies"
-        self._connected = False
+        self._url = "https://api.hh.ru/vacancies"
+        self._headers = {"User-Agent": "HH-User-Agent"}
+        self._params = {"text": "", "page": 0, "per_page": 100}
+        self._vacancies = []
 
-    def connect(self) -> None:
-        """Подключение к API."""
-        self._connected = True
+    def _connect_to_api(self):
+        response = requests.get(self._url, headers=self._headers, params=self._params)
+        if response.status_code != 200:
+            raise Exception(f"Error fetching data: {response.status_code}")
+        return response
 
-    def get_vacancies(self, keyword: str) -> List[Dict]:
-        """Получение вакансии через API."""
-        if not self._connected:
-            self.connect()
-
-        params = {"text": keyword, "per_page": 100}
-        response = requests.get(self._base_url, params=params)
-        response.raise_for_status()
-        return response.json()["items"]
+    def get_vacancies(self, keyword: str):
+        self._params["text"] = keyword
+        self._params["page"] = 0
+        while self._params["page"] < 20:
+            response = self._connect_to_api()
+            vacancies = response.json().get("items", [])
+            if vacancies:
+                self._vacancies.extend(vacancies)
+                self._params["page"] += 1
+            else:
+                break
+        return self._vacancies

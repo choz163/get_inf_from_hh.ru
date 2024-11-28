@@ -1,35 +1,30 @@
-from typing import Union
-
 class Vacancy:
-    """Класс для представления вакансии."""
+    __slots__ = ["title", "company", "salary", "link"]
 
-    __slots__ = ("_name", "_url", "_salary", "_description")
+    def __init__(self, title: str, company: str, salary: int, link: str):
+        self.title = self._validate_string(title)
+        self.company = self._validate_string(company)
+        self.salary = self._validate_salary(salary)
+        self.link = self._validate_string(link)
 
-    def __init__(self, name: str, url: str, salary: Union[str, int], description: str):
-        self._name = name
-        self._url = url
-        self._salary = self._validate_salary(salary)
-        self._description = description
+    def _validate_string(self, value: str) -> str:
+        if not value:
+            raise ValueError("Строковое значение не может быть пустым")
+        return value
 
-    def _validate_salary(self, salary: Union[str, int]) -> int:
-        if isinstance(salary, int):
-            return salary
-        elif isinstance(salary, str):
-            if salary.isdigit():
-                return int(salary)
-            else:
-                return 0
-        else:
-            raise ValueError("Неверный тип зарплаты")
+    def _validate_salary(self, value: int) -> int:
+        if value < 0:
+            return 0
+        return value
 
-    def __eq__(self, other: "Vacancy") -> bool:
-        return self._salary == other._salary
+    def __repr__(self):
+        return f"Vacancy(title={self.title}, company={self.company}, salary={self.salary}, link={self.link})"
 
-    def __lt__(self, other: "Vacancy") -> bool:
-        return self._salary < other._salary
+    def __eq__(self, other):
+        return self.salary == other.salary
 
-    def __gt__(self, other: "Vacancy") -> bool:
-        return self._salary > other._salary
+    def __lt__(self, other):
+        return self.salary < other.salary
 
-    def __repr__(self) -> str:
-        return f"Вакансия(name={self._name}, url={self._url}, salary={self._salary}, description={self._description})"
+    def __le__(self, other):
+        return self.salary <= other.salary
